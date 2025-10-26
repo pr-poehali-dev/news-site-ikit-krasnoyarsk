@@ -13,6 +13,7 @@ interface NewsArticle {
   date: string;
   category: string;
   commentsCount: number;
+  image?: string;
 }
 
 const mockNews: NewsArticle[] = [
@@ -24,6 +25,7 @@ const mockNews: NewsArticle[] = [
     date: '2025-10-26',
     category: 'Наука',
     commentsCount: 12,
+    image: 'https://cdn.poehali.dev/projects/00fc5f79-eeb0-4d95-aead-d9a89c173069/files/dc15984e-2967-4028-818c-367118bf6f1d.jpg',
   },
   {
     id: '2',
@@ -33,6 +35,7 @@ const mockNews: NewsArticle[] = [
     date: '2025-10-25',
     category: 'Достижения',
     commentsCount: 8,
+    image: 'https://cdn.poehali.dev/projects/00fc5f79-eeb0-4d95-aead-d9a89c173069/files/eff3f428-9aa2-4417-b1a3-617fe8cfd3f4.jpg',
   },
   {
     id: '3',
@@ -42,6 +45,7 @@ const mockNews: NewsArticle[] = [
     date: '2025-10-24',
     category: 'Учеба',
     commentsCount: 45,
+    image: 'https://cdn.poehali.dev/projects/00fc5f79-eeb0-4d95-aead-d9a89c173069/files/f5a78b07-30b9-46c2-9e05-cbc0a47e3319.jpg',
   },
   {
     id: '4',
@@ -89,16 +93,25 @@ const Home = () => {
         <div className="grid gap-6">
           {news.map((article) => (
             <Link key={article.id} to={`/article/${article.id}`} className="block">
-              <Card className="hover:shadow-lg transition-all duration-200 animate-fade-in">
+              <Card className="hover:shadow-lg transition-all duration-200 animate-fade-in overflow-hidden">
+                {article.image && (
+                  <div className="w-full h-72 overflow-hidden">
+                    <img 
+                      src={article.image} 
+                      alt={article.title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                )}
                 <CardHeader>
                   <div className="flex items-start justify-between gap-4 mb-2">
                     <div className="flex-1">
-                      <CardTitle className="text-2xl mb-2 hover:text-accent transition-colors">
-                        {article.title}
-                      </CardTitle>
                       <Badge className={getCategoryColor(article.category)} variant="secondary">
                         {article.category}
                       </Badge>
+                      <CardTitle className="text-2xl mt-2 mb-2 hover:text-accent transition-colors">
+                        {article.title}
+                      </CardTitle>
                     </div>
                   </div>
                   <CardDescription className="text-base leading-relaxed">

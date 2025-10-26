@@ -57,6 +57,7 @@ const Article = () => {
     author: 'Иванов И.И.',
     date: '2025-10-26',
     category: 'Наука',
+    image: 'https://cdn.poehali.dev/projects/00fc5f79-eeb0-4d95-aead-d9a89c173069/files/dc15984e-2967-4028-818c-367118bf6f1d.jpg',
   };
 
   const handleAddComment = () => {
@@ -101,7 +102,16 @@ const Article = () => {
       
       <main className="container py-8">
         <article className="max-w-4xl mx-auto animate-fade-in">
-          <Card>
+          <Card className="overflow-hidden">
+            {article.image && (
+              <div className="w-full h-96 overflow-hidden">
+                <img 
+                  src={article.image} 
+                  alt={article.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
             <CardHeader className="space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">

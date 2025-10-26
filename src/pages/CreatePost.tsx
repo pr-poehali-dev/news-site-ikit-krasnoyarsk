@@ -18,6 +18,7 @@ const CreatePost = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
 
   useEffect(() => {
     if (!user || (user.role !== 'writer' && user.role !== 'admin')) {
@@ -80,6 +81,29 @@ const CreatePost = () => {
                       <SelectItem value="События">События</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="imageUrl">URL изображения (необязательно)</Label>
+                  <Input
+                    id="imageUrl"
+                    type="url"
+                    placeholder="https://example.com/image.jpg"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                  />
+                  {imageUrl && (
+                    <div className="mt-2 rounded-lg overflow-hidden border">
+                      <img 
+                        src={imageUrl} 
+                        alt="Предпросмотр"
+                        className="w-full h-48 object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
