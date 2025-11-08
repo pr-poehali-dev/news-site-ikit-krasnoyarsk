@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
+import { api } from '@/lib/api';
 
 const CreatePost = () => {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ const CreatePost = () => {
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!user || (user.role !== 'writer' && user.role !== 'admin')) {
@@ -26,15 +28,44 @@ const CreatePost = () => {
     }
   }, [user, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    toast({
-      title: 'Пост создан',
-      description: 'Ваша публикация успешно добавлена',
-    });
+    if (!title || !content || !category) {
+      toast({
+        title: 'Ошибка',
+        description: 'Заполните все обязательные поля',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsLoading(true);
     
-    navigate('/');
+    try {
+      await api.posts.create({
+        title,
+        category,
+        content,
+        image_url: imageUrl || undefined,
+        author_id: user?.id,
+      });
+
+      toast({
+        title: 'Пост создан',
+        description: 'Ваша публикация успешно добавлена',
+      });
+      
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: 'Ошибка',
+        description: error instanceof Error ? error.message : 'Не удалось создать пост',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!user) return null;
@@ -120,11 +151,11 @@ const CreatePost = () => {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button type="submit" className="flex-1">
+                  <Button type="submit" className="flex-1" disabled={isLoading}>
                     <Icon name="Send" size={16} className="mr-2" />
-                    Опубликовать
+                    {isLoading ? 'Публикация...' : 'Опубликовать'}
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+                  <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={isLoading}>
                     Отмена
                   </Button>
                 </div>

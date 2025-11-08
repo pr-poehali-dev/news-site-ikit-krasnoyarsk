@@ -7,12 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/lib/api';
+import { authStorage } from '@/lib/auth';
 
 const Register = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -38,8 +42,20 @@ const Register = () => {
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      await register(username, email, password);
+      const response = await api.auth.register({ 
+        username, 
+        email, 
+        password,
+        full_name: fullName 
+      });
+      
+      authStorage.setToken(response.token);
+      authStorage.setUser(response.user);
+      register(username, email, password);
+      
       toast({
         title: 'Регистрация успешна',
         description: 'Добро пожаловать в ИКИТ!',
@@ -48,9 +64,11 @@ const Register = () => {
     } catch (error) {
       toast({
         title: 'Ошибка',
-        description: 'Не удалось создать аккаунт',
+        description: error instanceof Error ? error.message : 'Не удалось создать аккаунт',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -72,10 +90,21 @@ const Register = () => {
                   <Input
                     id="username"
                     type="text"
-                    placeholder="Иван Иванов"
+                    placeholder="ivanov"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Полное имя (необязательно)</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="Иван Иванов"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
                   />
                 </div>
 
@@ -115,8 +144,8 @@ const Register = () => {
                   />
                 </div>
 
-                <Button type="submit" className="w-full">
-                  Зарегистрироваться
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
                 </Button>
 
                 <div className="text-center text-sm text-muted-foreground">

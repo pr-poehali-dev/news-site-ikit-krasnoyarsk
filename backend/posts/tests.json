@@ -1,0 +1,23 @@
+{
+  "tests": [
+    {
+      "name": "Create new post",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "title": "Test News Article",
+        "category": "Наука",
+        "content": "This is a test article content",
+        "image_url": "https://example.com/image.jpg",
+        "author_id": 1
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "post": {
+          "title": "string"
+        }
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}

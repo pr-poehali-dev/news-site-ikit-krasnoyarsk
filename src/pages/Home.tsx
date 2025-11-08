@@ -1,20 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Icon from '@/components/ui/icon';
-
-interface NewsArticle {
-  id: string;
-  title: string;
-  content: string;
-  author: string;
-  date: string;
-  category: string;
-  commentsCount: number;
-  image?: string;
-}
+import { api, Post } from '@/lib/api';
 
 const mockNews: NewsArticle[] = [
   {
@@ -68,7 +58,23 @@ const mockNews: NewsArticle[] = [
 ];
 
 const Home = () => {
-  const [news] = useState<NewsArticle[]>(mockNews);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadPosts = async () => {
+      try {
+        const data = await api.posts.getAll();
+        setPosts(data);
+      } catch (error) {
+        console.error('Failed to load posts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPosts();
+  }, []);
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
@@ -90,56 +96,66 @@ const Home = () => {
           <p className="text-muted-foreground">Актуальная информация института космических и информационных технологий</p>
         </div>
 
-        <div className="grid gap-6">
-          {news.map((article) => (
-            <Link key={article.id} to={`/article/${article.id}`} className="block">
-              <Card className="hover:shadow-lg transition-all duration-200 animate-fade-in overflow-hidden">
-                {article.image && (
-                  <div className="w-full h-72 overflow-hidden">
-                    <img 
-                      src={article.image} 
-                      alt={article.title}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                )}
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4 mb-2">
-                    <div className="flex-1">
-                      <Badge className={getCategoryColor(article.category)} variant="secondary">
-                        {article.category}
-                      </Badge>
-                      <CardTitle className="text-2xl mt-2 mb-2 hover:text-accent transition-colors">
-                        {article.title}
-                      </CardTitle>
+        {isLoading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Загрузка новостей...</p>
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Пока нет опубликованных новостей</p>
+          </div>
+        ) : (
+          <div className="grid gap-6">
+            {posts.map((post) => (
+              <Link key={post.id} to={`/article/${post.id}`} className="block">
+                <Card className="hover:shadow-lg transition-all duration-200 animate-fade-in overflow-hidden">
+                  {post.image_url && (
+                    <div className="w-full h-72 overflow-hidden">
+                      <img 
+                        src={post.image_url} 
+                        alt={post.title}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
-                  </div>
-                  <CardDescription className="text-base leading-relaxed">
-                    {article.content}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1">
-                        <Icon name="User" size={14} />
-                        <span>{article.author}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Icon name="Calendar" size={14} />
-                        <span>{new Date(article.date).toLocaleDateString('ru-RU')}</span>
+                  )}
+                  <CardHeader>
+                    <div className="flex items-start justify-between gap-4 mb-2">
+                      <div className="flex-1">
+                        <Badge className={getCategoryColor(post.category)} variant="secondary">
+                          {post.category}
+                        </Badge>
+                        <CardTitle className="text-2xl mt-2 mb-2 hover:text-accent transition-colors">
+                          {post.title}
+                        </CardTitle>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Icon name="MessageCircle" size={14} />
-                      <span>{article.commentsCount}</span>
+                    <CardDescription className="text-base leading-relaxed">
+                      {post.content.substring(0, 150)}...
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1">
+                          <Icon name="User" size={14} />
+                          <span>{post.author_name || 'Аноним'}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Icon name="Calendar" size={14} />
+                          <span>{new Date(post.created_at).toLocaleDateString('ru-RU')}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Icon name="Eye" size={14} />
+                        <span>{post.views}</span>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );

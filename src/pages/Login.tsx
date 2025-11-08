@@ -7,18 +7,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { api } from '@/lib/api';
+import { authStorage } from '@/lib/auth';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    
     try {
-      await login(email, password);
+      const response = await api.auth.login({ email, password });
+      authStorage.setToken(response.token);
+      authStorage.setUser(response.user);
+      login(email, password);
+      
       toast({
         title: 'Успешный вход',
         description: 'Добро пожаловать!',
@@ -27,9 +36,11 @@ const Login = () => {
     } catch (error) {
       toast({
         title: 'Ошибка',
-        description: 'Неверный email или пароль',
+        description: error instanceof Error ? error.message : 'Неверный email или пароль',
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -69,8 +80,8 @@ const Login = () => {
                   />
                 </div>
 
-                <Button type="submit" className="w-full">
-                  Войти
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Вход...' : 'Войти'}
                 </Button>
 
                 <div className="text-center text-sm text-muted-foreground">

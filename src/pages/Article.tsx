@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import Header from '@/components/Header';
@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
+import { api, Post } from '@/lib/api';
 
 interface Comment {
   id: string;
@@ -23,42 +24,32 @@ const Article = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
+  const [post, setPost] = useState<Post | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: '1',
-      author: 'Петров А.В.',
-      content: 'Отличная новость! Очень рад за наш институт.',
-      date: '2025-10-26T10:30:00',
-    },
-    {
-      id: '2',
-      author: 'Сидорова М.И.',
-      content: 'Когда можно будет посетить новую лабораторию?',
-      date: '2025-10-26T11:15:00',
-    },
-  ]);
+  const [comments, setComments] = useState<Comment[]>([]);
 
-  const article = {
-    id: '1',
-    title: 'ИКИТ открывает новую лабораторию искусственного интеллекта',
-    content: `Институт космических и информационных технологий объявляет о запуске современной лаборатории ИИ, оснащенной высокопроизводительными вычислительными системами для исследований в области машинного обучения и нейронных сетей.
+  useEffect(() => {
+    const loadPost = async () => {
+      if (!id) return;
+      
+      try {
+        const data = await api.posts.getById(Number(id));
+        setPost(data);
+      } catch (error) {
+        toast({
+          title: 'Ошибка',
+          description: 'Не удалось загрузить новость',
+          variant: 'destructive',
+        });
+        navigate('/');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-Новая лаборатория оборудована 20 рабочими станциями с мощными графическими ускорителями NVIDIA A100, серверным кластером для обучения крупных языковых моделей и специализированным программным обеспечением для разработки ИИ-приложений.
-
-В рамках открытия лаборатории запланированы:
-• Мастер-классы по глубокому обучению от ведущих специалистов
-• Хакатон по компьютерному зрению
-• Серия лекций о применении ИИ в космической отрасли
-
-Студенты и аспиранты ИКИТ получат доступ к современному оборудованию для выполнения курсовых работ, дипломных проектов и научных исследований. Планируется также сотрудничество с крупными IT-компаниями для реализации совместных проектов.
-
-Официальное открытие лаборатории состоится 15 ноября 2025 года. Приглашаются все желающие!`,
-    author: 'Иванов И.И.',
-    date: '2025-10-26',
-    category: 'Наука',
-    image: 'https://cdn.poehali.dev/projects/00fc5f79-eeb0-4d95-aead-d9a89c173069/files/dc15984e-2967-4028-818c-367118bf6f1d.jpg',
-  };
+    loadPost();
+  }, [id, navigate, toast]);
 
   const handleAddComment = () => {
     if (!user) {
@@ -96,6 +87,23 @@ const Article = () => {
     navigate('/');
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-muted/30">
+        <Header />
+        <main className="container py-8">
+          <div className="text-center">
+            <p className="text-muted-foreground">Загрузка...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!post) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-muted/30">
       <Header />
@@ -103,11 +111,11 @@ const Article = () => {
       <main className="container py-8">
         <article className="max-w-4xl mx-auto animate-fade-in">
           <Card className="overflow-hidden">
-            {article.image && (
+            {post.image_url && (
               <div className="w-full h-96 overflow-hidden">
                 <img 
-                  src={article.image} 
-                  alt={article.title}
+                  src={post.image_url} 
+                  alt={post.title}
                   className="w-full h-full object-cover"
                 />
               </div>
@@ -115,18 +123,22 @@ const Article = () => {
             <CardHeader className="space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <Badge className="mb-3">{article.category}</Badge>
+                  <Badge className="mb-3">{post.category}</Badge>
                   <h1 className="text-4xl font-bold mb-4 leading-tight">
-                    {article.title}
+                    {post.title}
                   </h1>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Icon name="User" size={14} />
-                      <span>{article.author}</span>
+                      <span>{post.author_name || 'Аноним'}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Icon name="Calendar" size={14} />
-                      <span>{new Date(article.date).toLocaleDateString('ru-RU')}</span>
+                      <span>{new Date(post.created_at).toLocaleDateString('ru-RU')}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Icon name="Eye" size={14} />
+                      <span>{post.views}</span>
                     </div>
                   </div>
                 </div>
@@ -141,7 +153,7 @@ const Article = () => {
             </CardHeader>
             <CardContent>
               <div className="prose prose-lg max-w-none">
-                {article.content.split('\n\n').map((paragraph, index) => (
+                {post.content.split('\n\n').map((paragraph, index) => (
                   <p key={index} className="mb-4 leading-relaxed text-foreground">
                     {paragraph}
                   </p>
